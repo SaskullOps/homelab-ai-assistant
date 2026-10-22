@@ -1,0 +1,798 @@
+[
+  {
+    "id": "SiriRouter0001",
+    "name": "siri-router",
+    "active": false,
+    "nodes": [
+      {
+        "id": "a1000000-0000-4000-8000-000000000001",
+        "name": "Router In",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          300
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "__SIRI_ROUTER_PATH__",
+          "authentication": "headerAuth",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "SiriToken0001",
+            "name": "Siri token"
+          }
+        },
+        "webhookId": "a1000000-0000-4000-8000-0000000000f1"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000002",
+        "name": "Normalize",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          260,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const b = $input.first().json.body || {};\nlet action = typeof b.action === \"string\" ? b.action.trim().toLowerCase() : \"\";\nconst text = typeof b.text === \"string\" ? b.text.trim() : \"\";\nif (!action) action = \"ask\";\nreturn [{ json: { action, text } }];"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000003",
+        "name": "Route by action",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          520,
+          300
+        ],
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "c1",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "ask",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ask"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "c1",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "status",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "status"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "c1",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "wake",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "wake"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra",
+            "renameFallbackOutput": "unknown"
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000004",
+        "name": "Validate Ask",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          800,
+          100
+        ],
+        "parameters": {
+          "jsCode": "const text = $input.first().json.text || \"\";\nconst valid = text.length > 0 && text.length <= 1000;\nlet sessionId = \"\";\nif (valid) {\n  // Rolling conversation id: renewed after 15 minutes of silence.\n  const sd = $getWorkflowStaticData('global');\n  const now = Date.now();\n  if (!sd.sessionId || !sd.lastAt || now - sd.lastAt > 15 * 60 * 1000) {\n    sd.sessionId = 'siri-' + now.toString(36);\n  }\n  sd.lastAt = now;\n  sessionId = sd.sessionId;\n}\nreturn [{ json: { text, valid, sessionId } }];"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000005",
+        "name": "Valid?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1060,
+          100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.valid }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000006",
+        "name": "Respond 400",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1320,
+          260
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "I did not catch that, please say it again.",
+          "options": {
+            "responseCode": 400,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000007",
+        "name": "Ask LLM",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1320,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $env.LLM_BASE_URL }}/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ model: $env.LLM_MODEL, stream: false, user: $json.sessionId, messages: [ { role: \"system\", content: $env.LLM_SYSTEM_PROMPT || \"You are a voice assistant. The user spoke through Siri or an Apple Watch and your answer will be read aloud. Answer in the user's language, in 1 to 3 short sentences, with no markdown, lists, links or emojis.\" }, { role: \"user\", content: $json.text } ] }) }}",
+          "options": {
+            "timeout": 50000
+          }
+        },
+        "onError": "continueErrorOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "LlmApiKey0001",
+            "name": "LLM API key"
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000008",
+        "name": "Extract",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1580,
+          -40
+        ],
+        "parameters": {
+          "jsCode": "const c = $input.first().json?.choices?.[0]?.message?.content;\n// Some local reasoning models prepend <think>...</think>; never speak that.\nconst reply = typeof c === \"string\" ? c.replace(/<think>[\\s\\S]*?<\\/think>/g, \"\").trim() : \"\";\nreturn [{ json: { reply: reply || \"The assistant did not answer. Try again in a moment.\" } }];"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000009",
+        "name": "Respond Ask OK",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1840,
+          -40
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "={{ $json.reply }}",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000010",
+        "name": "Respond Ask Fallback",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1580,
+          140
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "The assistant is not responding right now. Try again in a moment.",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000011",
+        "name": "Status configured?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          800,
+          500
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $env.STATUS_URL || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000012",
+        "name": "Status Hook",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1060,
+          460
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.STATUS_URL }}",
+          "options": {
+            "timeout": 55000,
+            "response": {
+              "response": {
+                "responseFormat": "text"
+              }
+            }
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000013",
+        "name": "Status Text",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          440
+        ],
+        "parameters": {
+          "jsCode": "const j = $input.first().json;\nconst t = typeof j.data === \"string\" ? j.data.trim() : \"\";\nreturn [{ json: { reply: t || \"I could not check the status.\" } }];"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000014",
+        "name": "Respond Status",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1580,
+          440
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "={{ $json.reply }}",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000015",
+        "name": "Respond Status Fail",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1320,
+          600
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "I could not check the status.",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000016",
+        "name": "Respond Status Not Configured",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1060,
+          640
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "Status is not configured on this bridge.",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000017",
+        "name": "Wake configured?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          800,
+          820
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $env.WAKE_URL || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000018",
+        "name": "Wake Hook",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1060,
+          780
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.WAKE_URL }}",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000019",
+        "name": "Respond Wake OK",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1320,
+          760
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "Wake signal sent. It should be up in about a minute.",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000020",
+        "name": "Respond Wake Fail",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1320,
+          920
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "I could not send the wake signal.",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000021",
+        "name": "Respond Wake Not Configured",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          1060,
+          960
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "Wake is not configured on this bridge.",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000022",
+        "name": "Respond Unknown",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          800,
+          1100
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "={{ \"I do not know the action \" + $json.action + \". I can ask, check the status or wake a machine.\" }}",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Router In": {
+        "main": [
+          [
+            {
+              "node": "Normalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalize": {
+        "main": [
+          [
+            {
+              "node": "Route by action",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route by action": {
+        "main": [
+          [
+            {
+              "node": "Validate Ask",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Status configured?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Wake configured?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Unknown",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate Ask": {
+        "main": [
+          [
+            {
+              "node": "Valid?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valid?": {
+        "main": [
+          [
+            {
+              "node": "Ask LLM",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond 400",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ask LLM": {
+        "main": [
+          [
+            {
+              "node": "Extract",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Ask Fallback",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract": {
+        "main": [
+          [
+            {
+              "node": "Respond Ask OK",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Status configured?": {
+        "main": [
+          [
+            {
+              "node": "Status Hook",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Status Not Configured",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Status Hook": {
+        "main": [
+          [
+            {
+              "node": "Status Text",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Status Fail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Status Text": {
+        "main": [
+          [
+            {
+              "node": "Respond Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wake configured?": {
+        "main": [
+          [
+            {
+              "node": "Wake Hook",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Wake Not Configured",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wake Hook": {
+        "main": [
+          [
+            {
+              "node": "Respond Wake OK",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Wake Fail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "pinData": {}
+  }
+]

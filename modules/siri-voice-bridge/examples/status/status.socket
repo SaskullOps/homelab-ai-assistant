@@ -1,0 +1,14 @@
+[Unit]
+Description=Spoken status (Docker bridge only)
+After=network-online.target docker.service
+
+[Socket]
+ListenStream=@BRIDGE_IP@:8644
+FreeBind=yes
+Accept=yes
+MaxConnections=1
+TriggerLimitIntervalSec=30
+TriggerLimitBurst=5
+
+[Install]
+WantedBy=sockets.target

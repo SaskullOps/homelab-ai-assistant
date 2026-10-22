@@ -1,0 +1,22 @@
+# Template unit: one instance per accepted connection (see wake.socket).
+# Replace @TARGET_MAC@; install handler.sh and wol.py in /usr/local/lib/siri-bridge/.
+[Unit]
+Description=Send a Wake-on-LAN packet (%i)
+
+[Service]
+DynamicUser=yes
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+TimeoutStartSec=10
+Environment=TARGET_MAC=@TARGET_MAC@
+ExecStart=/usr/local/lib/siri-bridge/handler.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=

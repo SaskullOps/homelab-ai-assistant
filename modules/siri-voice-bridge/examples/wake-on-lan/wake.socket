@@ -1,0 +1,16 @@
+# Listens ONLY on the Docker bridge address so the n8n container can reach it
+# and nothing else can. Replace @BRIDGE_IP@ (docker network inspect bridge).
+[Unit]
+Description=Wake-on-LAN trigger (Docker bridge only)
+After=network-online.target docker.service
+
+[Socket]
+ListenStream=@BRIDGE_IP@:8643
+FreeBind=yes
+Accept=yes
+MaxConnections=2
+TriggerLimitIntervalSec=30
+TriggerLimitBurst=5
+
+[Install]
+WantedBy=sockets.target
