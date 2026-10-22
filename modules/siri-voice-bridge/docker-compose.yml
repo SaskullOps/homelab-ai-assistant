@@ -1,6 +1,7 @@
 services:
   n8n:
-    image: n8nio/n8n:2.44.3
+    # Tag plus multi-arch index digest: the digest is what is actually pulled.
+    image: n8nio/n8n:2.44.3@sha256:5032941f437e1daa421cad0cc3ea57cd054f0d44a7256b38a0a3fca1b460834a
     container_name: siri-voice-bridge-n8n
     restart: unless-stopped
     ports:
@@ -10,10 +11,30 @@ services:
     environment:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in .env}
       N8N_HOST: localhost
+      # Localhost only: the editor is served over plain http on 127.0.0.1, where a
+      # Secure cookie would not be set. Behind any real hostname use https and
+      # remove this line.
       N8N_SECURE_COOKIE: "false"
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      # The workflow reads $env.LLM_BASE_URL, LLM_MODEL, LLM_SYSTEM_PROMPT,
+      # STATUS_URL and WAKE_URL, so env access in expressions must stay on.
+      # Only non-secret values are read that way: the Siri token and the LLM API
+      # key live in n8n credentials, not in env. Risk: any code node or
+      # expression an editor user writes can also read N8N_ENCRYPTION_KEY from
+      # the environment, so the n8n editor must stay private (127.0.0.1 only,
+      # never behind the tunnel).
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      # Do not persist execution data: it would contain the X-Siri-Token header
+      # and every spoken question. Set EXECUTIONS_DATA_SAVE_ON_ERROR: all only
+      # while debugging, then wipe the executions.
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: none
+      EXECUTIONS_DATA_SAVE_ON_ERROR: none
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "false"
+      # With pruning on, n8n only soft-deletes unsaved executions and keeps the
+      # row (token header included) until a later hard-delete pass. Nothing is
+      # saved here, so there is nothing to prune: delete immediately instead.
+      EXECUTIONS_DATA_PRUNE: "false"
       GENERIC_TIMEZONE: ${TZ:-UTC}
       LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434/v1}
       LLM_MODEL: ${LLM_MODEL:-llama3.1:8b}

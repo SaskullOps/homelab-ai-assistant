@@ -18,9 +18,14 @@ ROUTER_PATH=$(getenv SIRI_ROUTER_PATH)
 TOKEN=$(getenv SIRI_TOKEN)
 LLM_KEY=$(getenv LLM_API_KEY)
 LLM_KEY=${LLM_KEY:-none}
+ENC_KEY=$(getenv N8N_ENCRYPTION_KEY)
+PORT=$(getenv N8N_PORT); PORT=${PORT:-5678}
 
 [[ "$ROUTER_PATH" =~ ^[A-Za-z0-9_-]{16,}$ ]] || { echo "SIRI_ROUTER_PATH must be 16+ chars of [A-Za-z0-9_-] (openssl rand -hex 12)"; exit 1; }
-[[ "$TOKEN" =~ ^[^[:space:]]{16,}$ ]] || { echo "SIRI_TOKEN must be 16+ chars, no spaces (openssl rand -hex 24)"; exit 1; }
+[[ "$TOKEN" =~ ^[A-Za-z0-9._~+/=-]{16,}$ ]] || { echo "SIRI_TOKEN must be 16+ chars of [A-Za-z0-9._~+/=-] (openssl rand -hex 24)"; exit 1; }
+[[ "$ENC_KEY" =~ ^[^[:space:]]{32,}$ ]] || { echo "N8N_ENCRYPTION_KEY must be 32+ chars, no spaces (openssl rand -hex 24)"; exit 1; }
+[[ "$PORT" =~ ^[0-9]+$ ]] && [ "$PORT" -ge 1 ] && [ "$PORT" -le 65535 ] || { echo "N8N_PORT must be a number between 1 and 65535"; exit 1; }
+[[ "$LLM_KEY" != *$'\n'* ]] || { echo "LLM_API_KEY must be a single line"; exit 1; }
 
 DC="docker compose"
 EXEC="$DC exec -T n8n"
@@ -34,6 +39,7 @@ $EXEC wget -qO- http://127.0.0.1:5678/healthz >/dev/null 2>&1 || { echo "n8n did
 
 # Credentials travel through stdin, never through argv or the process list.
 creds=$($EXEC sh -c 'umask 077; mktemp /tmp/creds.XXXXXX' | tr -d '\r')
+[[ "$creds" =~ ^/tmp/creds\.[A-Za-z0-9]{6}$ ]] || { echo "unexpected temp file name from the container"; exit 1; }
 TOKEN="$TOKEN" LLM_KEY="$LLM_KEY" python3 -c '
 import json, os
 def c(i, n, h, v):
@@ -41,7 +47,7 @@ def c(i, n, h, v):
 print(json.dumps([
     c("SiriToken0001", "Siri token", "X-Siri-Token", os.environ["TOKEN"]),
     c("LlmApiKey0001", "LLM API key", "Authorization", "Bearer " + os.environ["LLM_KEY"]),
-]))' | $EXEC sh -c "cat > $creds"
+]))' | $EXEC sh -c 'cat > "$1"' sh "$creds"
 $EXEC n8n import:credentials --input="$creds" >/dev/null
 $EXEC rm -f "$creds"
 echo "credentials imported"
@@ -61,10 +67,9 @@ timeout 150 $EXEC n8n publish:workflow --id=SiriRouter0001 >/dev/null
 echo "workflow published"
 
 $DC restart n8n >/dev/null 2>&1
-PORT=$(getenv N8N_PORT); PORT=${PORT:-5678}
 URL="http://127.0.0.1:${PORT}/webhook/${ROUTER_PATH}"
 echo "waiting for the webhook to register..."
-timeout 120 bash -c "until curl -s -X POST '$URL' | grep -q 'Authorization data is wrong'; do sleep 2; done" \
+URL="$URL" timeout 120 bash -c 'until curl -s -X POST "$URL" | grep -q "Authorization data is wrong"; do sleep 2; done' \
   || { echo "webhook did not register; check: $DC logs n8n"; exit 1; }
 
 echo "ready: POST $URL  (header X-Siri-Token)"

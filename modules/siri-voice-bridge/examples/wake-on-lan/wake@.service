@@ -9,6 +9,7 @@ StandardInput=socket
 StandardOutput=socket
 StandardError=journal
 TimeoutStartSec=10
+RuntimeMaxSec=10
 Environment=TARGET_MAC=@TARGET_MAC@
 ExecStart=/usr/local/lib/siri-bridge/handler.sh
 NoNewPrivileges=yes
