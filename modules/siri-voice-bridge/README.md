@@ -24,12 +24,7 @@ You say a sentence on an Apple Watch or iPhone. An n8n workflow sends it to any 
 
 Shortcuts can call a URL, but a raw URL with a secret in it makes a poor public endpoint, and each new voice command tends to become its own half-secured workflow. This module has one router webhook with a header token, a random path and a switch on `action`. Adding a voice command means adding a Shortcut, not opening another public door.
 
-> **Placeholder:** the demo below is a stand-in until a real Watch recording replaces it (see [`docs/README.md`](docs/README.md)). The Shortcut screenshots in the [Shortcut guide](shortcut/README.md) are placeholders too, and say so in the image.
-
-<!-- PLACEHOLDER: replace docs/demo.gif with a real recording -->
-<p align="center">
-  <img src="docs/demo.gif" alt="Placeholder demo: asking the lab a question from an Apple Watch" width="480">
-</p>
+<!-- demo: a real Apple Watch recording goes here (docs/demo.gif) -->
 
 <table>
   <tr>

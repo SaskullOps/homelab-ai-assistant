@@ -11,18 +11,18 @@ Build "ask" first, test it, then duplicate it for the other actions.
 
 1. New Shortcut. Name it something that is **not a first name**, for example `Ask the lab`. Siri treats "ask <name>" as a contact.
 2. Add **Ask for Input**. Input type: Text. Prompt: `What do you want to ask?`.
-   ![Ask for Input action with the Text type and a prompt](../docs/shortcut-1-ask-for-input.png)
+   <!-- screenshot: shortcut-1-ask-for-input.png (Ask for Input action with the Text type and a prompt) -->
    Do not use **Dictate Text**: on the Watch it can open the Shortcuts app instead of listening.
 3. Add **Get Contents of URL**.
    - URL: the full webhook URL (not just the host).
    - Expand **Show More**. Method: `POST`.
    - Headers: add `X-Siri-Token` with your token as the value.
    - Request Body: `JSON`. Add a Text field `action` with value `ask`, and a Text field `text` whose value is the **Provided Input** variable from step 2.
-   ![Get Contents of URL with POST, the token header and a JSON body](../docs/shortcut-2-get-contents-of-url.png)
+   <!-- screenshot: shortcut-2-get-contents-of-url.png (Get Contents of URL with POST, the token header and a JSON body) -->
 4. Add **Speak Text** and choose **Contents of URL** as its input.
-   ![Speak Text receiving the Contents of URL](../docs/shortcut-3-speak-text.png)
+   <!-- screenshot: shortcut-3-speak-text.png (Speak Text receiving the Contents of URL) -->
 5. Open the Shortcut details (the `i` button) and enable **Show on Apple Watch**.
-   ![Show on Apple Watch switched on](../docs/shortcut-4-show-on-watch.png)
+   <!-- screenshot: shortcut-4-show-on-watch.png (Show on Apple Watch switched on) -->
 
 Run it from the phone first. Then say "Hey Siri, Ask the lab" or tap it on the Watch.
 
