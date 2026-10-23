@@ -22,7 +22,9 @@
 
 Small modules for talking to a home lab: voice, documents and safe actions. You can install them one at a time. They share one rule: the assistant can look at everything, and anything that changes something needs a human tap.
 
-<!-- demo: a real Apple Watch recording goes here (docs/demo.gif) -->
+<p align="center">
+  <img src="modules/siri-voice-bridge/docs/demo.gif" alt="Animated walkthrough: the camera follows a question through the n8n router to the model" width="720">
+</p>
 
 <table>
   <tr>

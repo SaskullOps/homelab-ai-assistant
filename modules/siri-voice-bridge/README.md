@@ -24,7 +24,9 @@ You say a sentence on an Apple Watch or iPhone. An n8n workflow sends it to any 
 
 Shortcuts can call a URL, but a raw URL with a secret in it makes a poor public endpoint, and each new voice command tends to become its own half-secured workflow. This module has one router webhook with a header token, a random path and a switch on `action`. Adding a voice command means adding a Shortcut, not opening another public door.
 
-<!-- demo: a real Apple Watch recording goes here (docs/demo.gif) -->
+<p align="center">
+  <img src="docs/demo.gif" alt="Animated walkthrough: the camera follows a question through the n8n router to the model" width="720">
+</p>
 
 <table>
   <tr>
