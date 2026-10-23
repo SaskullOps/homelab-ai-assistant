@@ -124,7 +124,7 @@ To look at the workflow, sign in to the n8n editor with the owner account and op
 
 You need one Shortcut per action. The full walkthrough is in [`shortcut/README.md`](shortcut/README.md). For the "ask" Shortcut:
 
-1. **Ask for Input** (Text), with the prompt "What do you want to ask?"
+1. **Dictate Text** if you launch it with a tap, or **Ask for Input** (Text) if you launch it with "Hey Siri"
 2. **Get Contents of URL**: your webhook URL, Method `POST`, header `X-Siri-Token` set to your token, Request Body `JSON` with `action` = `ask` and `text` = the Provided Input.
 3. **Speak Text** with the Contents of URL.
 4. In the Shortcut settings, turn on **Show on Apple Watch**.
@@ -187,7 +187,7 @@ These are the errors I hit while building it.
 | Shortcut says "invalid URL" | You pasted only the base URL. It must be the full `https://<host>/webhook/<path>`. |
 | "The network connection was lost" | The token was pasted with a trailing newline or space. Re-type it, or paste into a plain text field first. `import.sh` strips whitespace on the server side, but the Shortcut side is up to you. |
 | Siri opens a contact or says it cannot find a person | A phrase like "ask <name>" is parsed as a contact. Name the Shortcut something that is not a first name, for example "Ask the lab". |
-| "Dictate Text" opens the Shortcuts app instead of listening on the Watch | Use **Ask for Input** (Text) instead. It works hands-free on the Watch. |
+| "Hey Siri, <shortcut>" opens the Shortcuts app instead of listening | The Shortcut starts with Dictate Text. For voice launches use **Ask for Input** (Text); keep Dictate Text if you launch it with a tap. |
 | The agent answers from memory and never uses a tool | An agent behind the endpoint decides whether to call tools. Tell it to in `LLM_SYSTEM_PROMPT` or in the question ("check ..."), and make sure the tools are enabled for that API. |
 | `test.sh` ask times out and the fallback sentence is spoken | The n8n container cannot reach the model. From Linux with `ufw`, Docker traffic to the host is blocked by default: `sudo ufw allow from <compose subnet> to <bridge ip> port 11434 proto tcp` (read the subnet with `docker network inspect siri-voice-bridge_default -f '{{(index .IPAM.Config 0).Subnet}}'`). Ollama must also listen on an address the container can reach: bind it to the Docker bridge address (`OLLAMA_HOST=<bridge ip>:11434`, see `docker network inspect bridge`) rather than `0.0.0.0`. **Never set `OLLAMA_HOST=0.0.0.0` on a machine reachable from your LAN or the internet**: Ollama has no authentication, so anyone who can reach the port can use your models and your GPU. If you do bind more widely, restrict the port with a firewall rule. Check with `docker compose exec n8n wget -qO- http://host.docker.internal:11434/api/version`. |
 | Webhook returns 404 right after import | n8n registers the webhook on restart. `import.sh` waits for it; if you imported by hand, run `docker compose restart n8n`. |
