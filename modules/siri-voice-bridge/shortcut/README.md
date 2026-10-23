@@ -22,7 +22,7 @@ Build "ask" first, test it, then duplicate it for the other actions.
 4. Add **Speak Text** and choose **Contents of URL** as its input.
    <!-- screenshot: shortcut-3-speak-text.png (Speak Text receiving the Contents of URL) -->
 5. Open the Shortcut details (the `i` button) and enable **Show on Apple Watch**.
-   <!-- screenshot: shortcut-4-show-on-watch.png (Show on Apple Watch switched on) -->
+   <img src="../docs/shortcut-4-show-on-watch.png" alt="Three shortcuts (Jarvis, wake the tower, homelab status) on an Apple Watch" width="320">
 
 Run it from the phone first. Then say "Hey Siri, Ask the lab" or tap it on the Watch.
 
