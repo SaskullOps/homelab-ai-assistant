@@ -125,7 +125,7 @@ To look at the workflow, sign in to the n8n editor with the owner account and op
 You need one Shortcut per action. The full walkthrough is in [`shortcut/README.md`](shortcut/README.md). For the "ask" Shortcut:
 
 1. **Dictate Text** if you launch it with a tap, or **Ask for Input** (Text) if you launch it with "Hey Siri"
-2. **Get Contents of URL**: your webhook URL, Method `POST`, header `X-Siri-Token` set to your token, Request Body `JSON` with `action` = `ask` and `text` = the Provided Input.
+2. **Get Contents of URL**: your webhook URL, Method `POST`, header `X-Siri-Token` set to your token, Request Body `JSON` with `action` = `ask` and `text` = the variable from step 1 (Dictated Text or Provided Input).
 3. **Speak Text** with the Contents of URL.
 4. In the Shortcut settings, turn on **Show on Apple Watch**.
 
