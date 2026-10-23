@@ -20,7 +20,7 @@ Build "ask" first, test it, then duplicate it for the other actions.
    - Request Body: `JSON`. Add a Text field `action` with value `ask`, and a Text field `text` whose value is the **Provided Input** variable from step 2.
    <!-- screenshot: shortcut-2-get-contents-of-url.png (Get Contents of URL with POST, the token header and a JSON body) -->
 4. Add **Speak Text** and choose **Contents of URL** as its input.
-   <!-- screenshot: shortcut-3-speak-text.png (Speak Text receiving the Contents of URL) -->
+   <img src="../docs/shortcut-3-speak-text.png" alt="Speak Text action receiving the Contents of URL" width="420">
 5. Open the Shortcut details (the `i` button) and enable **Show on Apple Watch**.
    <img src="../docs/shortcut-4-show-on-watch.png" alt="Three shortcuts (Jarvis, wake the tower, homelab status) on an Apple Watch" width="320">
 
